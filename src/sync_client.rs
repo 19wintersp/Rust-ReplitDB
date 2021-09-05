@@ -80,6 +80,7 @@ impl Client {
 
 		let response = self.client.post(self.url.clone())
 			.body(format!("{}={}", encoded_key, encoded_value))
+			.header("Content-Type", "application/x-www-form-urlencoded")
 			.send()
 			.map_err(|err| err.to_string())?;
 		
