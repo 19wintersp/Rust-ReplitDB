@@ -3,7 +3,6 @@ use crate::get_url_from_env;
 use std::collections::HashMap;
 
 use reqwest::Client as HttpClient;
-use reqwest::multipart::Form;
 
 use urlencoding::{ encode, decode };
 
@@ -79,11 +78,11 @@ impl Client {
 		key: impl Into<String>,
 		value: impl Into<String>,
 	) -> Result<(), String> {
-		let form = Form::new()
-			.text(key.into(), value.into());
+		let encoded_key = encode(key.into().as_str()).into_owned();
+		let encoded_value = encode(value.into().as_str()).into_owned();
 
 		let response = self.client.post(self.url.clone())
-			.multipart(form)
+			.body(format!("{}={}", encoded_key, encoded_value))
 			.send()
 			.await
 			.map_err(|err| err.to_string())?;
