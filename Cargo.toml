@@ -1,6 +1,6 @@
 [package]
 name = "replitdb"
-version = "0.1.0"
+version = "0.1.1"
 authors = [ "Patrick Winters <19wintersp@gmail.com>" ]
 edition = "2018"
 description = "A simple Rust client for Replit DB."
