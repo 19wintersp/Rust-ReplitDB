@@ -46,7 +46,7 @@ impl Client {
 
 	/// Get the value of the specified key. Returns `Ok(None)` if the key does not exist.
 	pub async fn get(
-		self,
+		&self,
 		key: impl Into<String>,
 	) -> Result<Option<String>, String> {
 		let encoded_key = encode(key.into().as_str()).into_owned();
@@ -75,14 +75,14 @@ impl Client {
 
 	/// Set the value of the specified key to the provided value.
 	pub async fn set(
-		self,
+		&self,
 		key: impl Into<String>,
 		value: impl Into<String>,
 	) -> Result<(), String> {
 		let form = Form::new()
 			.text(key.into(), value.into());
 
-		let response = self.client.post(self.url)
+		let response = self.client.post(self.url.clone())
 			.multipart(form)
 			.send()
 			.await
@@ -100,7 +100,7 @@ impl Client {
 	}
 
 	/// Delete the specified key from the database.
-	pub async fn delete(self, key: impl Into<String>) -> Result<(), String> {
+	pub async fn delete(&self, key: impl Into<String>) -> Result<(), String> {
 		let encoded_key = encode(key.into().as_str()).into_owned();
 
 		let response = self.client.delete(format!("{}/{}", self.url, encoded_key))
@@ -120,16 +120,16 @@ impl Client {
 	}
 
 	/// List all keys in the database.
-	pub async fn list(self) -> Result<Vec<String>, String> {
+	pub async fn list(&self) -> Result<Vec<String>, String> {
 		self.list_prefix("").await
 	}
 
 	/// List all keys in the database that start with the specified prefix.
 	pub async fn list_prefix(
-		self,
+		&self,
 		prefix: impl Into<String>,
 	) -> Result<Vec<String>, String> {
-		let response = self.client.get(self.url)
+		let response = self.client.get(self.url.clone())
 			.query(&[ ("encode", "true"), ("prefix", prefix.into().as_str()) ])
 			.send()
 			.await
@@ -159,26 +159,26 @@ impl Client {
 	}
 
 	/// Delete all keys in the database.
-	pub async fn empty(self) -> Result<(), String> {
+	pub async fn empty(&self) -> Result<(), String> {
 		// this could probably be improved
 
-		let keys = self.clone().list().await?;
+		let keys = self.list().await?;
 		for key in keys {
-			self.clone().delete(key).await?;
+			self.delete(key).await?;
 		}
 
 		Ok(())
 	}
 
 	/// Get all key-value pairs and return them as a [`HashMap`](std::collections::HashMap).
-	pub async fn get_all(self) -> Result<HashMap<String, String>, String> {
+	pub async fn get_all(&self) -> Result<HashMap<String, String>, String> {
 		// this could probably be improved
 
 		let mut out = HashMap::new();
 
-		let keys = self.clone().list().await?;
+		let keys = self.list().await?;
 		for key in keys {
-			let value = self.clone().get(key.clone()).await?;
+			let value = self.get(key.clone()).await?;
 			out.insert(key, value.unwrap());
 		}
 

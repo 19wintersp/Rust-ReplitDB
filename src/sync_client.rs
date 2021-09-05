@@ -46,7 +46,7 @@ impl Client {
 
 	/// Get the value of the specified key. Returns `Ok(None)` if the key does not exist.
 	pub fn get(
-		self,
+		&self,
 		key: impl Into<String>,
 	) -> Result<Option<String>, String> {
 		let encoded_key = encode(key.into().as_str()).into_owned();
@@ -72,14 +72,14 @@ impl Client {
 
 	/// Set the value of the specified key to the provided value.
 	pub fn set(
-		self,
+		&self,
 		key: impl Into<String>,
 		value: impl Into<String>,
 	) -> Result<(), String> {
 		let form = Form::new()
 			.text(key.into(), value.into());
 
-		let response = self.client.post(self.url)
+		let response = self.client.post(self.url.clone())
 			.multipart(form)
 			.send()
 			.map_err(|err| err.to_string())?;
@@ -95,7 +95,7 @@ impl Client {
 	}
 
 	/// Delete the specified key from the database.
-	pub fn delete(self, key: impl Into<String>) -> Result<(), String> {
+	pub fn delete(&self, key: impl Into<String>) -> Result<(), String> {
 		let encoded_key = encode(key.into().as_str()).into_owned();
 
 		let response = self.client.delete(format!("{}/{}", self.url, encoded_key))
@@ -113,16 +113,16 @@ impl Client {
 	}
 
 	/// List all keys in the database.
-	pub fn list(self) -> Result<Vec<String>, String> {
+	pub fn list(&self) -> Result<Vec<String>, String> {
 		self.list_prefix("")
 	}
 
 	/// List all keys in the database that start with the specified prefix.
 	pub fn list_prefix(
-		self,
+		&self,
 		prefix: impl Into<String>,
 	) -> Result<Vec<String>, String> {
-		let response = self.client.get(self.url)
+		let response = self.client.get(self.url.clone())
 			.query(&[ ("encode", "true"), ("prefix", prefix.into().as_str()) ])
 			.send()
 			.map_err(|err| err.to_string())?;
@@ -149,26 +149,26 @@ impl Client {
 	}
 
 	/// Delete all keys in the database.
-	pub fn empty(self) -> Result<(), String> {
+	pub fn empty(&self) -> Result<(), String> {
 		// this could probably be improved
 
-		let keys = self.clone().list()?;
+		let keys = self.list()?;
 		for key in keys {
-			self.clone().delete(key)?;
+			self.delete(key)?;
 		}
 
 		Ok(())
 	}
 
 	/// Get all key-value pairs and return them as a [`HashMap`](std::collections::HashMap).
-	pub fn get_all(self) -> Result<HashMap<String, String>, String> {
+	pub fn get_all(&self) -> Result<HashMap<String, String>, String> {
 		// this could probably be improved
 
 		let mut out = HashMap::new();
 
-		let keys = self.clone().list()?;
+		let keys = self.list()?;
 		for key in keys {
-			let value = self.clone().get(key.clone())?;
+			let value = self.get(key.clone())?;
 			out.insert(key, value.unwrap());
 		}
 
